@@ -1,0 +1,36 @@
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Load the movie dataset
+movies = pd.read_csv('movies.csv')  # Assume a dataset with a column 'description'
+
+# Use TF-IDF Vectorizer to transform the descriptions into vectors
+tfidf = TfidfVectorizer(stop_words='english')
+movies['description'] = movies['description'].fillna('')  # Fill NaN with empty string
+
+# Create the TF-IDF matrix for the movie descriptions
+tfidf_matrix = tfidf.fit_transform(movies['description'])
+
+# Compute cosine similarity matrix based on the TF-IDF matrix
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+# Function to get movie recommendations based on the description similarity
+def get_recommendations(title, cosine_sim=cosine_sim):
+    # Get the index of the movie that matches the title
+    idx = movies[movies['title'] == title].index[0]
+    
+    # Get the pairwise similarity scores for all movies with that movie
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    
+    # Sort the movies based on the similarity scores
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+    
+    # Get the indices of the top 10 most similar movies
+    movie_indices = [i[0] for i in sim_scores[1:11]]
+    
+    # Return the top 10 most similar movies
+    return movies['title'].iloc[movie_indices]
+
+# Example usage
+print(get_recommendations('The Matrix'))
